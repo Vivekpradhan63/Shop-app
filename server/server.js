@@ -17,7 +17,15 @@ connectDB();
 const app = express();
 
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-const allowedOrigins = [clientUrl, "http://localhost:5173", "http://localhost:5174", "http://172.22.105.99:5173", "http://172.22.105.99:5174"];
+const allowedOrigins = [
+  clientUrl,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://172.22.105.99:5173",
+  "http://172.22.105.99:5174",
+  "https://shop-app-65c8a.web.app",
+  "https://shop-app-65c8a.firebaseapp.com",
+];
 
 app.use(
   helmet({
