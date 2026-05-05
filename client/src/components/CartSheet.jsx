@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+﻿import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,7 @@ export default function CartSheet({ open, onOpenChange }) {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium line-clamp-2">{line.name}</p>
-                    <p className="text-sm text-muted-foreground">${Number(line.price).toFixed(2)} each</p>
+                    <p className="text-sm text-muted-foreground">₹{Number(line.price).toFixed(2)} each</p>
                     <div className="mt-2 flex items-center gap-2">
                       <Button
                         type="button"
@@ -121,7 +121,7 @@ export default function CartSheet({ open, onOpenChange }) {
           <div className="space-y-3">
             <div className="flex justify-between text-lg font-semibold">
               <span>Total</span>
-              <span>${totalPrice.toFixed(2)}</span>
+              <span>₹{totalPrice.toFixed(2)}</span>
             </div>
             <Button className="w-full" asChild variant="secondary">
               <Link to="/cart" onClick={() => onOpenChange(false)}>

@@ -43,6 +43,7 @@ const createOrder = async (req, res, next) => {
     }
     const order = await Order.create({
       user: req.user._id,
+      phone: req.user.phone,
       items: lineItems,
       shippingAddress: shippingAddress.trim(),
       totalPrice,
@@ -50,7 +51,7 @@ const createOrder = async (req, res, next) => {
       paymentStatus: "pending",
     });
     const populated = await Order.findById(order._id)
-      .populate("user", "name email")
+      .populate("user", "name email phone")
       .populate("items.product", "name images price");
     res.status(201).json(populated);
   } catch (e) {
@@ -76,7 +77,7 @@ const getOrderById = async (req, res, next) => {
       throw new Error("Invalid order id");
     }
     const order = await Order.findById(req.params.id)
-      .populate("user", "name email")
+      .populate("user", "name email phone")
       .populate("items.product", "name images price");
     if (!order) {
       res.status(404);
@@ -97,7 +98,7 @@ const getAllOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({})
       .sort({ createdAt: -1 })
-      .populate("user", "name email")
+      .populate("user", "name email phone")
       .populate("items.product", "name images price");
     res.json(orders);
   } catch (e) {
@@ -125,7 +126,7 @@ const updateOrderStatus = async (req, res, next) => {
     order.orderStatus = orderStatus;
     await order.save();
     const populated = await Order.findById(order._id)
-      .populate("user", "name email")
+      .populate("user", "name email phone")
       .populate("items.product", "name images price");
     res.json(populated);
   } catch (e) {

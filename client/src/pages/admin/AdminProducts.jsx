@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "@/utils/axiosInstance";
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,11 @@ const emptyForm = {
   available: true,
 };
 
+import { getImageUrl } from "@/utils/getImageUrl";
+
 function thumb(images) {
-  return images?.[0] || "https://placehold.co/64x64/e2e8f0/64748b?text=G";
+  const url = getImageUrl(images?.[0]);
+  return url || "https://placehold.co/64x64/e2e8f0/64748b?text=G";
 }
 
 export default function AdminProducts() {
@@ -61,6 +64,7 @@ export default function AdminProducts() {
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [viewImage, setViewImage] = useState(null);
   const fileInputRef = useRef(null);
 
   const load = async () => {
@@ -124,14 +128,14 @@ export default function AdminProducts() {
     try {
       const data = new FormData();
       data.append("image", file);
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: data,
+      
+      const res = await axiosInstance.post("/upload", data, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Upload failed");
+      
+      const json = res.data;
       setForm((prev) => ({ ...prev, imageUrl: json.url }));
       setImagePreview(json.url);
       toast.success("Image uploaded!");
@@ -244,10 +248,17 @@ export default function AdminProducts() {
             <TableBody>
               {filtered.map((p) => (
                 <TableRow key={p._id}>
-                  <TableCell><img src={thumb(p.images)} alt="" className="h-12 w-12 rounded object-cover" /></TableCell>
+                  <TableCell>
+                    <img 
+                      src={thumb(p.images)} 
+                      alt="" 
+                      className="h-12 w-12 rounded object-cover cursor-pointer transition-opacity hover:opacity-80" 
+                      onClick={() => setViewImage(getImageUrl(p.images?.[0]) || thumb(p.images))}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>{p.category}</TableCell>
-                  <TableCell>${Number(p.price).toFixed(2)}</TableCell>
+                  <TableCell>₹{Number(p.price).toFixed(2)}</TableCell>
                   <TableCell>{p.unit || "per piece"}</TableCell>
                   <TableCell>{p.stock}</TableCell>
                   <TableCell>
@@ -385,6 +396,18 @@ export default function AdminProducts() {
             <Button type="button" variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
             <Button type="button" variant="destructive" onClick={confirmDelete}>Delete</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(viewImage)} onOpenChange={(o) => !o && setViewImage(null)}>
+        <DialogContent className="max-w-3xl p-1 bg-transparent border-none shadow-none">
+          {viewImage && (
+            <img 
+              src={viewImage} 
+              alt="Preview" 
+              className="w-full h-auto max-h-[85vh] object-contain rounded-md" 
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

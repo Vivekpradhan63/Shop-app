@@ -44,18 +44,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(
-    async (email, password) => {
-      const { data } = await axiosInstance.post("/auth/login", { email, password });
+    async (identifier, password) => {
+      const { data } = await axiosInstance.post("/auth/login", { identifier, password });
       persistSession(data.user, data.token);
       return data;
     },
     [persistSession]
   );
 
-  const register = useCallback(async (payload) => {
-    const { data } = await axiosInstance.post("/auth/register", payload);
-    return data;
-  }, []);
+  const register = useCallback(
+    async (payload) => {
+      const { data } = await axiosInstance.post("/auth/register", payload);
+      persistSession(data.user, data.token);
+      return data;
+    },
+    [persistSession]
+  );
 
   const logout = useCallback(() => {
     persistSession(null, null);

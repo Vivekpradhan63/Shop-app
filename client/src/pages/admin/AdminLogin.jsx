@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,24 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+export default function AdminLogin() {
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from?.pathname || "/admin";
 
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  if (isAuthenticated) {
+  // If already authenticated as admin, redirect to admin dashboard
+  if (isAuthenticated && user?.role === "admin") {
     return <Navigate to={from} replace />;
+  } else if (isAuthenticated) {
+    // If authenticated as normal user, they shouldn't be here, send to home
+    return <Navigate to="/" replace />;
   }
 
   const validate = () => {
     const e = {};
-    if (!phone.trim()) e.phone = "Phone number is required";
+    if (!email.trim()) e.email = "Email is required";
     if (!password) e.password = "Password is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -35,11 +39,15 @@ export default function Login() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await login(phone.trim(), password);
-      toast.success("Logged in successfully");
+      // The backend accepts "identifier" which maps to either email or phone
+      const data = await login(email.trim(), password);
+      if (data.user?.role !== "admin") {
+        throw new Error("Access denied. You do not have admin privileges.");
+      }
+      toast.success("Admin access granted");
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+      toast.error(err.response?.data?.message || err.message || "Admin login failed");
     } finally {
       setSubmitting(false);
     }
@@ -49,21 +57,21 @@ export default function Login() {
     <div className="mx-auto flex min-h-[70vh] max-w-md items-center px-2">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>Enter your phone number and password to continue.</CardDescription>
+          <CardTitle>Admin Portal Login</CardTitle>
+          <CardDescription>Restricted access. Please enter your admin email.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="phone"
-                type="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -77,14 +85,8 @@ export default function Login() {
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Signing in…" : "Sign in"}
+              {submitting ? "Authenticating…" : "Sign In to Admin Portal"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              No account?{" "}
-              <Link to="/register" className="text-primary underline-offset-4 hover:underline">
-                Register
-              </Link>
-            </p>
           </form>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -83,7 +83,7 @@ export default function Cart() {
                   />
                   <div className="flex-1 min-w-0 space-y-2">
                     <p className="font-semibold line-clamp-2">{line.name}</p>
-                    <p className="text-sm text-muted-foreground">${Number(line.price).toFixed(2)} each</p>
+                    <p className="text-sm text-muted-foreground">₹{Number(line.price).toFixed(2)} each</p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
@@ -116,7 +116,7 @@ export default function Cart() {
                     </div>
                   </div>
                   <div className="text-right font-semibold">
-                    ${(line.quantity * Number(line.price)).toFixed(2)}
+                    ₹{(line.quantity * Number(line.price)).toFixed(2)}
                   </div>
                 </CardContent>
               </Card>
@@ -125,7 +125,7 @@ export default function Cart() {
           <Separator />
           <div className="flex items-center justify-between text-xl font-bold">
             <span>Total</span>
-            <span>${totalPrice.toFixed(2)}</span>
+            <span>₹{totalPrice.toFixed(2)}</span>
           </div>
           <Button className="w-full min-h-12" size="lg" onClick={() => setDialogOpen(true)}>
             Place Order

@@ -14,12 +14,15 @@ async function updateAdmin() {
   const hashedPassword = await bcrypt.hash("vivek@2008", 10);
 
   const result = await User.findOneAndUpdate(
-    { role: "admin" },
+    { email: "pradhanvivek2008@gmail.com" },
     {
+      name: "Admin",
       email: "pradhanvivek2008@gmail.com",
+      phone: "9999999999",
       password: hashedPassword,
+      role: "admin"
     },
-    { new: true }
+    { new: true, upsert: true }
   );
 
   if (!result) {

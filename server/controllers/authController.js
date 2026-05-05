@@ -7,24 +7,24 @@ const signToken = (id) =>
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, address, role } = req.body;
-    if (!name || !email || !password) {
+    const { name, phone, password, address } = req.body;
+    if (!name || !phone || !password) {
       res.status(400);
-      throw new Error("Please provide name, email, and password");
+      throw new Error("Please provide name, phone, and password");
     }
-    const exists = await User.findOne({ email });
+    const exists = await User.findOne({ phone });
     if (exists) {
       res.status(400);
-      throw new Error("User already exists with this email");
+      throw new Error("User already exists with this phone number");
     }
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(password, salt);
     const user = await User.create({
       name,
-      email,
+      phone,
       password: hashed,
       address: address || "",
-      role: role === "admin" ? "customer" : undefined,
+      role: "customer", // Force customer role
     });
     const token = signToken(user._id.toString());
     res.status(201).json({
@@ -32,7 +32,7 @@ const register = async (req, res, next) => {
       user: {
         _id: user._id,
         name: user.name,
-        email: user.email,
+        phone: user.phone,
         role: user.role,
         address: user.address,
         createdAt: user.createdAt,
@@ -45,15 +45,18 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
       res.status(400);
-      throw new Error("Please provide email and password");
+      throw new Error("Please provide email/phone and password");
     }
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ 
+      $or: [{ email: identifier }, { phone: identifier }] 
+    }).select("+password");
+    
     if (!user || !(await bcrypt.compare(password, user.password))) {
       res.status(401);
-      throw new Error("Invalid email or password");
+      throw new Error("Invalid credentials");
     }
     const token = signToken(user._id.toString());
     res.json({
@@ -62,6 +65,7 @@ const login = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         address: user.address,
         createdAt: user.createdAt,

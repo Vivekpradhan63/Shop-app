@@ -72,7 +72,7 @@ export default function AdminDashboard() {
         <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Groceries</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.productCount}</p></CardContent></Card>
         <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Orders</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.orderCount}</p></CardContent></Card>
         <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Users</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.userCount}</p></CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Revenue</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">${stats.revenue.toFixed(2)}</p></CardContent></Card>
+        <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Revenue</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">₹{stats.revenue.toFixed(2)}</p></CardContent></Card>
       </div>
 
       <Card>
@@ -82,14 +82,16 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
-            <thead><tr className="border-b text-left text-muted-foreground"><th className="pb-2 pr-4">Order ID</th><th className="pb-2 pr-4">Customer</th><th className="pb-2 pr-4">Date</th><th className="pb-2 pr-4">Total</th><th className="pb-2">Status</th></tr></thead>
+            <thead><tr className="border-b text-left text-muted-foreground"><th className="pb-2 pr-4">Order ID</th><th className="pb-2 pr-4">Customer</th><th className="pb-2 pr-4">Phone</th><th className="pb-2 pr-4">Address</th><th className="pb-2 pr-4">Date</th><th className="pb-2 pr-4">Total</th><th className="pb-2">Status</th></tr></thead>
             <tbody>
               {recentOrders.map((o) => (
                 <tr key={o._id} className="border-b last:border-0">
                   <td className="py-3 pr-4 font-mono text-xs">{o._id}</td>
-                  <td className="py-3 pr-4">{o.user?.name || "�"}</td>
+                  <td className="py-3 pr-4 font-medium">{o.user?.name || "-"}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{o.phone || o.user?.phone || "-"}</td>
+                  <td className="py-3 pr-4 text-muted-foreground max-w-[200px] truncate" title={o.shippingAddress}>{o.shippingAddress || "-"}</td>
                   <td className="py-3 pr-4 whitespace-nowrap">{new Date(o.createdAt).toLocaleString()}</td>
-                  <td className="py-3 pr-4 font-medium">${Number(o.totalPrice).toFixed(2)}</td>
+                  <td className="py-3 pr-4 font-medium">₹{Number(o.totalPrice).toFixed(2)}</td>
                   <td className="py-3"><Badge variant={orderStatusBadgeVariant(o.orderStatus)} className="capitalize">{o.orderStatus}</Badge></td>
                 </tr>
               ))}

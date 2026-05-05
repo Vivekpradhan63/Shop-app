@@ -130,7 +130,9 @@ export default function AdminOrders() {
             <TableHeader>
               <TableRow>
                 <TableHead>Order ID</TableHead>
-                <TableHead>Customer Name</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Address</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead>Total Price</TableHead>
@@ -142,10 +144,12 @@ export default function AdminOrders() {
               {filtered.map((o) => (
                 <TableRow key={o._id}>
                   <TableCell className="font-mono text-xs">{shortId(o._id)}</TableCell>
-                  <TableCell>{o.user?.name || "-"}</TableCell>
+                  <TableCell className="font-medium">{o.user?.name || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground">{o.phone || o.user?.phone || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground max-w-[200px] truncate" title={o.shippingAddress}>{o.shippingAddress || "-"}</TableCell>
                   <TableCell className="whitespace-nowrap">{new Date(o.createdAt).toLocaleString()}</TableCell>
                   <TableCell>{o.items?.length || 0}</TableCell>
-                  <TableCell>${Number(o.totalPrice).toFixed(2)}</TableCell>
+                  <TableCell>₹{Number(o.totalPrice).toFixed(2)}</TableCell>
                   <TableCell>
                     <Badge variant={orderStatusBadgeVariant(o.orderStatus)} className="capitalize">
                       {o.orderStatus}
@@ -188,6 +192,7 @@ export default function AdminOrders() {
             <div className="space-y-4">
               <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
                 <p><span className="font-medium">Customer:</span> {selectedOrder.user?.name || "-"}</p>
+                <p><span className="font-medium">Phone:</span> {selectedOrder.phone || selectedOrder.user?.phone || "-"}</p>
                 <p><span className="font-medium">Date:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
                 <p className="sm:col-span-2"><span className="font-medium">Shipping:</span> {selectedOrder.shippingAddress}</p>
                 <p><span className="font-medium">Order ID:</span> {selectedOrder._id}</p>
@@ -200,16 +205,16 @@ export default function AdminOrders() {
                     <img src={imageOf(line)} alt="" className="h-12 w-12 rounded object-cover" />
                     <div className="flex-1">
                       <p className="font-medium">{line.product?.name || "Product"}</p>
-                      <p className="text-sm text-muted-foreground">Qty {line.quantity} � ${Number(line.price).toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">Qty {line.quantity} � ₹{Number(line.price).toFixed(2)}</p>
                     </div>
-                    <p className="font-semibold">${(Number(line.price) * Number(line.quantity)).toFixed(2)}</p>
+                    <p className="font-semibold">₹{(Number(line.price) * Number(line.quantity)).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
 
               <div className="flex items-center justify-between border-t pt-3 text-lg font-semibold">
                 <span>Total</span>
-                <span>${Number(selectedOrder.totalPrice).toFixed(2)}</span>
+                <span>₹{Number(selectedOrder.totalPrice).toFixed(2)}</span>
               </div>
             </div>
           )}

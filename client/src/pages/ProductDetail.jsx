@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "@/utils/axiosInstance";
@@ -12,8 +12,11 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+import { getImageUrl } from "@/utils/getImageUrl";
+
 function img(src) {
-  return src || "https://placehold.co/800x600/e2e8f0/64748b?text=Product";
+  const url = getImageUrl(src);
+  return url || "https://placehold.co/800x600/e2e8f0/64748b?text=Product";
 }
 
 export default function ProductDetail() {
@@ -111,7 +114,7 @@ export default function ProductDetail() {
         <div>
           <h1 className="text-3xl font-bold">{product.name}</h1>
           <StarRating value={product.ratings || 0} className="mt-2" />
-          <p className="mt-4 text-3xl font-bold">${Number(product.price).toFixed(2)}</p>
+          <p className="mt-4 text-3xl font-bold">₹{Number(product.price).toFixed(2)}</p>
           <p className="mt-2 text-muted-foreground">{product.description}</p>
           <p className="text-sm text-muted-foreground mt-2">In stock: {product.stock}</p>
         </div>

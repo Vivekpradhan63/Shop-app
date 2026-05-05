@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
 import AdminProducts from "@/pages/admin/AdminProducts.jsx";
 import AdminOrders from "@/pages/admin/AdminOrders.jsx";
 import AdminUsers from "@/pages/admin/AdminUsers.jsx";
+import AdminLogin from "@/pages/admin/AdminLogin.jsx";
 
 export default function App() {
   return (
@@ -36,6 +37,8 @@ export default function App() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
+      <Route path="/admin/login" element={<AdminLogin />} />
 
       <Route element={<AdminRoute />}>
         <Route path="admin" element={<AdminLayout />}>

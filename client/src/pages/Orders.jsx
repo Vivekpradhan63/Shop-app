@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "@/utils/axiosInstance";
@@ -58,7 +58,7 @@ export default function Orders() {
                     </p>
                   </div>
                   <div className="text-right space-y-2">
-                    <p className="text-lg font-bold">${Number(o.totalPrice).toFixed(2)}</p>
+                    <p className="text-lg font-bold">₹{Number(o.totalPrice).toFixed(2)}</p>
                     <Badge variant={orderStatusBadgeVariant(o.orderStatus)} className="capitalize">
                       {o.orderStatus}
                     </Badge>

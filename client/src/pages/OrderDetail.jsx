@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "@/utils/axiosInstance";
@@ -108,17 +108,17 @@ export default function OrderDetail() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">{line.product?.name || "Product"}</p>
                   <p className="text-sm text-muted-foreground">
-                    Quantity {line.quantity} × ${Number(line.price).toFixed(2)}
+                    Quantity {line.quantity} × ₹{Number(line.price).toFixed(2)}
                   </p>
                 </div>
-                <p className="font-semibold">${(line.quantity * Number(line.price)).toFixed(2)}</p>
+                <p className="font-semibold">₹{(line.quantity * Number(line.price)).toFixed(2)}</p>
               </li>
             ))}
           </ul>
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span>${Number(order.totalPrice).toFixed(2)}</span>
+            <span>₹{Number(order.totalPrice).toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>

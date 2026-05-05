@@ -12,7 +12,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [errors, setErrors] = useState({});
@@ -25,7 +25,7 @@ export default function Register() {
   const validate = () => {
     const e = {};
     if (!name.trim()) e.name = "Name is required";
-    if (!email.trim()) e.email = "Email is required";
+    if (!phone.trim()) e.phone = "Phone number is required";
     if (password.length < 6) e.password = "Password must be at least 6 characters";
     if (password !== confirm) e.confirm = "Passwords do not match";
     setErrors(e);
@@ -37,9 +37,10 @@ export default function Register() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await register({ name: name.trim(), email: email.trim(), password });
-      toast.success("Account created. Please sign in.");
-      navigate("/login", { replace: true });
+      const payload = { name: name.trim(), phone: phone.trim(), password };
+      await register(payload);
+      toast.success("Account created successfully!");
+      navigate("/products", { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {
@@ -62,15 +63,15 @@ export default function Register() {
               {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-email">Email</Label>
+              <Label htmlFor="reg-phone">Phone Number</Label>
               <Input
-                id="reg-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                id="reg-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel"
               />
-              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="reg-password">Password</Label>

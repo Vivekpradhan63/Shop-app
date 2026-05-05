@@ -1,4 +1,4 @@
-import { Link, useLocation, Navigate } from "react-router-dom";
+﻿import { Link, useLocation, Navigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,10 +58,10 @@ export default function OrderSuccess() {
                   <div className="flex-1">
                     <p className="font-medium">{line.product?.name || "Product"}</p>
                     <p className="text-muted-foreground">
-                      Qty {line.quantity} × ${Number(line.price).toFixed(2)}
+                      Qty {line.quantity} × ₹{Number(line.price).toFixed(2)}
                     </p>
                   </div>
-                  <p className="font-medium">${(line.quantity * Number(line.price)).toFixed(2)}</p>
+                  <p className="font-medium">₹{(line.quantity * Number(line.price)).toFixed(2)}</p>
                 </li>
               ))}
             </ul>
@@ -69,7 +69,7 @@ export default function OrderSuccess() {
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span>${Number(order.totalPrice).toFixed(2)}</span>
+            <span>₹{Number(order.totalPrice).toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>
