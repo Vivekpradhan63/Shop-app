@@ -43,7 +43,7 @@ const createOrder = async (req, res, next) => {
     }
     const order = await Order.create({
       user: req.user._id,
-      phone: req.user.phone,
+      phone: req.user.phone || "",
       items: lineItems,
       shippingAddress: shippingAddress.trim(),
       totalPrice,
@@ -63,8 +63,15 @@ const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ user: req.user._id })
       .sort({ createdAt: -1 })
+      .populate("user", "name email phone")
       .populate("items.product", "name images price");
-    res.json(orders);
+    // Ensure phone is always present (back-compat for old orders)
+    const normalized = orders.map((o) => {
+      const obj = o.toObject();
+      if (!obj.phone) obj.phone = obj.user?.phone || "";
+      return obj;
+    });
+    res.json(normalized);
   } catch (e) {
     next(e);
   }
@@ -88,7 +95,10 @@ const getOrderById = async (req, res, next) => {
       res.status(403);
       throw new Error("Not authorized to view this order");
     }
-    res.json(order);
+    // Back-compat: fill phone from user if not stored on order
+    const obj = order.toObject();
+    if (!obj.phone) obj.phone = obj.user?.phone || "";
+    res.json(obj);
   } catch (e) {
     next(e);
   }
@@ -100,7 +110,13 @@ const getAllOrders = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .populate("user", "name email phone")
       .populate("items.product", "name images price");
-    res.json(orders);
+    // Back-compat: fill phone from user if not stored on order
+    const normalized = orders.map((o) => {
+      const obj = o.toObject();
+      if (!obj.phone) obj.phone = obj.user?.phone || "";
+      return obj;
+    });
+    res.json(normalized);
   } catch (e) {
     next(e);
   }

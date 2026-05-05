@@ -20,7 +20,7 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    phone: { type: String, required: true },
+    phone: { type: String, default: "" },
     items: { type: [orderItemSchema], required: true, validate: (v) => v.length > 0 },
     shippingAddress: { type: String, required: true, trim: true },
     totalPrice: { type: Number, required: true, min: 0 },
