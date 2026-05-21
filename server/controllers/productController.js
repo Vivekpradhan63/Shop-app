@@ -1,6 +1,13 @@
 const Product = require("../models/Product");
 const Review = require("../models/Review");
 const mongoose = require("mongoose");
+const { v2: cloudinary } = require("cloudinary");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const CATEGORY_OPTIONS = [
   "Vegetables",
@@ -28,7 +35,7 @@ const normalizeUnit = (value) => {
 
 const getProducts = async (req, res, next) => {
   try {
-    const { search, category, sort } = req.query;
+    const { search, category, sort, page = 1, limit = 20 } = req.query;
     const filter = {};
 
     if (search) {
@@ -46,9 +53,24 @@ const getProducts = async (req, res, next) => {
     else if (sort === "price_desc") sortObj = { price: -1 };
     else if (sort === "rating_desc") sortObj = { ratings: -1 };
     else if (sort === "rating_asc") sortObj = { ratings: 1 };
+    else if (sort === "newest") sortObj = { createdAt: -1 };
+    else if (sort === "popular") sortObj = { numReviews: -1, ratings: -1 };
 
-    const products = await Product.find(filter).sort(sortObj);
-    res.json(products);
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const [products, total] = await Promise.all([
+      Product.find(filter).sort(sortObj).skip(skip).limit(limitNumber),
+      Product.countDocuments(filter)
+    ]);
+
+    res.json({
+      products,
+      totalPages: Math.ceil(total / limitNumber),
+      currentPage: pageNumber,
+      total
+    });
   } catch (e) {
     next(e);
   }
@@ -142,6 +164,19 @@ const deleteProduct = async (req, res, next) => {
       res.status(404);
       throw new Error("Product not found");
     }
+    
+    if (product.images && product.images.length > 0) {
+      for (const imgUrl of product.images) {
+        if (imgUrl.includes("cloudinary.com")) {
+          const parts = imgUrl.split("/");
+          const filename = parts.pop();
+          const folder = parts.pop();
+          const publicId = `${folder}/${filename.split(".")[0]}`;
+          await cloudinary.uploader.destroy(publicId).catch(err => console.error("Cloudinary destroy error:", err));
+        }
+      }
+    }
+
     await Review.deleteMany({ product: product._id });
     res.json({ message: "Product removed" });
   } catch (e) {

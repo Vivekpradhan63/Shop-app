@@ -4,6 +4,7 @@ import axiosInstance from "@/utils/axiosInstance";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import {
   Dialog,
   DialogContent,
@@ -14,9 +15,11 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AdminUsers() {
+  usePageTitle("Manage Users");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [blockingId, setBlockingId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -43,6 +46,19 @@ export default function AdminUsers() {
       await load();
     } catch (e) {
       toast.error(e.response?.data?.message || "Delete failed");
+    }
+  };
+
+  const toggleBlock = async (id, currentStatus) => {
+    setBlockingId(id);
+    try {
+      const { data } = await axiosInstance.put(`/users/${id}/block`);
+      setUsers(users.map(u => u._id === id ? data : u));
+      toast.success(`User ${data.isBlocked ? 'blocked' : 'unblocked'}`);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Action failed");
+    } finally {
+      setBlockingId(null);
     }
   };
 
@@ -79,17 +95,33 @@ export default function AdminUsers() {
                   <td className="p-3 font-medium">{u.name}</td>
                   <td className="p-3">{u.email}</td>
                   <td className="p-3">
-                    <Badge variant={u.role === "admin" ? "admin" : "customer"} className="capitalize">
-                      {u.role}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge variant={u.role === "admin" ? "admin" : "customer"} className="capitalize">
+                        {u.role}
+                      </Badge>
+                      {u.isBlocked && (
+                        <Badge variant="destructive">Blocked</Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3 whitespace-nowrap">
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="p-3 text-right">
-                    <Button type="button" size="sm" variant="destructive" onClick={() => setDeleteTarget(u)}>
-                      Delete
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="secondary" 
+                        disabled={blockingId === u._id}
+                        onClick={() => toggleBlock(u._id, u.isBlocked)}
+                      >
+                        {u.isBlocked ? "Unblock" : "Block"}
+                      </Button>
+                      <Button type="button" size="sm" variant="destructive" onClick={() => setDeleteTarget(u)}>
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

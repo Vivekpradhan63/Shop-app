@@ -6,6 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useCartUi } from "@/context/CartUiContext";
+import SearchBar from "@/components/SearchBar";
 
 export default function Header() {
   const { totalItems } = useCart();
@@ -22,9 +23,15 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
-        <Link to="/" className="text-lg font-bold tracking-tight">
+        <Link to="/" className="text-lg font-bold tracking-tight shrink-0">
           ShopApp
         </Link>
+
+        {/* Search bar — grows to fill space on desktop */}
+        <div className="flex-1 max-w-sm hidden sm:block">
+          <SearchBar />
+        </div>
+
         <div className="flex items-center gap-2">
           {isAuthenticated && user?.role === "admin" && (
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
@@ -40,6 +47,8 @@ export default function Header() {
               <Link to="/login">Login</Link>
             </Button>
           )}
+
+          {/* Cart icon button */}
           <Button
             type="button"
             variant="outline"
@@ -58,6 +67,7 @@ export default function Header() {
               </Badge>
             )}
           </Button>
+
           {isAuthenticated && (
             <Button
               type="button"
@@ -72,6 +82,11 @@ export default function Header() {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Mobile search bar — shown below header row */}
+      <div className="sm:hidden px-4 pb-2">
+        <SearchBar />
       </div>
     </header>
   );

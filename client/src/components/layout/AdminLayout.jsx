@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, ShoppingBasket, PackageCheck, Store } from "lucide-react";
+import { LayoutDashboard, ShoppingBasket, PackageCheck, Store, Users, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, value: "dashboard" },
   { to: "/admin/groceries", label: "Groceries", icon: ShoppingBasket, value: "groceries" },
   { to: "/admin/orders", label: "Orders", icon: PackageCheck, value: "orders" },
+  { to: "/admin/users", label: "Users", icon: Users, value: "users" },
+  { to: "/admin/coupons", label: "Coupons", icon: Ticket, value: "coupons" },
 ];
 
 export default function AdminLayout() {

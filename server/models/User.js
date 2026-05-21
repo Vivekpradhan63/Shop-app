@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
       default: "customer",
     },
     address: { type: String, default: "" },
+    isBlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: false }

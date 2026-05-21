@@ -14,6 +14,9 @@ const verifyToken = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
+    if (user.isBlocked) {
+      return res.status(403).json({ message: "Your account has been blocked" });
+    }
     req.user = user;
     next();
   } catch {

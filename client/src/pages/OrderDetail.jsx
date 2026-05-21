@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "@/utils/axiosInstance";
@@ -8,6 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { orderStatusBadgeVariant } from "@/utils/orderStatus";
 import OrderStatusStepper from "@/components/OrderStatusStepper";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { formatPrice, formatDate } from "@/lib/formatters";
+import { Printer, XCircle } from "lucide-react";
 
 function itemImage(p) {
   const url = p?.images?.[0];
@@ -15,9 +18,11 @@ function itemImage(p) {
 }
 
 export default function OrderDetail() {
+  usePageTitle("Order Detail");
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,16 +62,30 @@ export default function OrderDetail() {
     );
   }
 
+  const cancelOrder = async () => {
+    if (!window.confirm("Are you sure you want to cancel this order? This cannot be undone.")) return;
+    setCancelling(true);
+    try {
+      const { data } = await axiosInstance.put(`/orders/${id}/cancel`);
+      setOrder(data);
+      toast.success("Order cancelled successfully");
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Could not cancel order");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const items = order.items || [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Order detail</h1>
-          <p className="font-mono text-sm text-muted-foreground mt-1">{order._id}</p>
+          <h1 className="text-3xl font-bold">Order Detail</h1>
+          <p className="font-mono text-sm text-muted-foreground mt-2">Order #{order._id}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Placed {new Date(order.createdAt).toLocaleString()}
+            Placed {formatDate(order.createdAt)}
           </p>
         </div>
         <Badge variant={orderStatusBadgeVariant(order.orderStatus)} className="capitalize text-sm px-3 py-1">
@@ -85,9 +104,14 @@ export default function OrderDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Shipping address</CardTitle>
+          <CardTitle>Shipping details</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-1">
+          {order.phone && (
+            <p className="text-sm text-muted-foreground">
+              📞 {order.phone}
+            </p>
+          )}
           <p>{order.shippingAddress}</p>
         </CardContent>
       </Card>
@@ -108,24 +132,45 @@ export default function OrderDetail() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">{line.product?.name || "Product"}</p>
                   <p className="text-sm text-muted-foreground">
-                    Quantity {line.quantity} × ₹{Number(line.price).toFixed(2)}
+                    Quantity {line.quantity} × {formatPrice(line.price)}
                   </p>
                 </div>
-                <p className="font-semibold">₹{(line.quantity * Number(line.price)).toFixed(2)}</p>
+                <p className="font-semibold">{formatPrice(line.quantity * Number(line.price))}</p>
               </li>
             ))}
           </ul>
           <Separator />
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
-            <span>₹{Number(order.totalPrice).toFixed(2)}</span>
+            <span>{formatPrice(order.totalPrice)}</span>
           </div>
         </CardContent>
       </Card>
 
-      <Button variant="outline" asChild className="w-full sm:w-auto">
-        <Link to="/orders">Back to my orders</Link>
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button variant="outline" asChild className="flex-1 sm:flex-none">
+          <Link to="/orders">Back to my orders</Link>
+        </Button>
+        <Button 
+          variant="secondary" 
+          asChild 
+          className="flex-1 sm:flex-none"
+        >
+          <Link to={`/orders/${id}/invoice`} target="_blank">
+            <Printer className="mr-2 h-4 w-4" /> Download Invoice
+          </Link>
+        </Button>
+        {order.orderStatus === "pending" && (
+          <Button 
+            variant="destructive" 
+            className="flex-1 sm:flex-none sm:ml-auto"
+            onClick={cancelOrder}
+            disabled={cancelling}
+          >
+            <XCircle className="mr-2 h-4 w-4" /> {cancelling ? "Cancelling..." : "Cancel Order"}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

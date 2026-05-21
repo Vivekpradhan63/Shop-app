@@ -15,6 +15,7 @@ export default function BottomNav({ onCartClick }) {
       <div className="mx-auto flex max-w-7xl items-stretch justify-around">
         <NavLink
           to="/"
+          end
           className={({ isActive }) => cn(linkClass, isActive && "text-primary")}
         >
           <Home className="h-5 w-5" />

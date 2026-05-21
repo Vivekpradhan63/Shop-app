@@ -31,4 +31,27 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-module.exports = { getUsers, deleteUser };
+const toggleBlockUser = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      res.status(400);
+      throw new Error("Invalid user id");
+    }
+    if (req.params.id === req.user._id.toString()) {
+      res.status(400);
+      throw new Error("Cannot block yourself");
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+    res.json(user);
+  } catch (e) {
+    next(e);
+  }
+};
+
+module.exports = { getUsers, deleteUser, toggleBlockUser };

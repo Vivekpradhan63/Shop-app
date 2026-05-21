@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "@/utils/axiosInstance";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,7 @@ function thumb(images) {
 }
 
 export default function AdminProducts() {
+  usePageTitle("Manage Groceries");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);

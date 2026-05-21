@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const createOrder = async (req, res, next) => {
   try {
-    const { items, shippingAddress } = req.body;
+    const { items, shippingAddress, couponCode } = req.body;
     if (!shippingAddress || !items || !Array.isArray(items) || items.length === 0) {
       res.status(400);
       throw new Error("Items and shipping address are required");
@@ -38,6 +38,18 @@ const createOrder = async (req, res, next) => {
         price,
       });
     }
+    
+    // Apply coupon if provided
+    let discountAmount = 0;
+    if (couponCode) {
+      const Coupon = require("../models/Coupon");
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+      if (coupon && coupon.isActive && new Date(coupon.expiryDate) >= new Date()) {
+        discountAmount = (totalPrice * coupon.discountPercentage) / 100;
+        totalPrice -= discountAmount;
+      }
+    }
+
     for (const line of lineItems) {
       await Product.findByIdAndUpdate(line.product, { $inc: { stock: -line.quantity } });
     }
@@ -61,17 +73,33 @@ const createOrder = async (req, res, next) => {
 
 const getMyOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ user: req.user._id })
-      .sort({ createdAt: -1 })
-      .populate("user", "name email phone")
-      .populate("items.product", "name images price");
-    // Ensure phone is always present (back-compat for old orders)
+    const { page = 1, limit = 20 } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const [orders, total] = await Promise.all([
+      Order.find({ user: req.user._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNumber)
+        .populate("user", "name email phone")
+        .populate("items.product", "name images price"),
+      Order.countDocuments({ user: req.user._id })
+    ]);
+
     const normalized = orders.map((o) => {
       const obj = o.toObject();
       if (!obj.phone) obj.phone = obj.user?.phone || "";
       return obj;
     });
-    res.json(normalized);
+
+    res.json({
+      orders: normalized,
+      totalPages: Math.ceil(total / limitNumber),
+      currentPage: pageNumber,
+      total
+    });
   } catch (e) {
     next(e);
   }
@@ -106,17 +134,33 @@ const getOrderById = async (req, res, next) => {
 
 const getAllOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({})
-      .sort({ createdAt: -1 })
-      .populate("user", "name email phone")
-      .populate("items.product", "name images price");
-    // Back-compat: fill phone from user if not stored on order
+    const { page = 1, limit = 20 } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const [orders, total] = await Promise.all([
+      Order.find({})
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNumber)
+        .populate("user", "name email phone")
+        .populate("items.product", "name images price"),
+      Order.countDocuments({})
+    ]);
+
     const normalized = orders.map((o) => {
       const obj = o.toObject();
       if (!obj.phone) obj.phone = obj.user?.phone || "";
       return obj;
     });
-    res.json(normalized);
+
+    res.json({
+      orders: normalized,
+      totalPages: Math.ceil(total / limitNumber),
+      currentPage: pageNumber,
+      total
+    });
   } catch (e) {
     next(e);
   }
@@ -150,10 +194,50 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
+const cancelOrder = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      res.status(400);
+      throw new Error("Invalid order id");
+    }
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      res.status(404);
+      throw new Error("Order not found");
+    }
+    const ownerId = order.user?._id?.toString() || order.user?.toString();
+    if (ownerId !== req.user._id.toString() && req.user.role !== "admin") {
+      res.status(403);
+      throw new Error("Not authorized to cancel this order");
+    }
+    if (order.orderStatus !== "pending") {
+      res.status(400);
+      throw new Error("Only pending orders can be cancelled");
+    }
+
+    order.orderStatus = "cancelled";
+    order.cancelledAt = Date.now();
+    await order.save();
+
+    // Restore stock
+    for (const line of order.items) {
+      await Product.findByIdAndUpdate(line.product, { $inc: { stock: line.quantity } });
+    }
+
+    const populated = await Order.findById(order._id)
+      .populate("user", "name email phone")
+      .populate("items.product", "name images price");
+    res.json(populated);
+  } catch (e) {
+    next(e);
+  }
+};
+
 module.exports = {
   createOrder,
   getMyOrders,
   getOrderById,
   getAllOrders,
   updateOrderStatus,
+  cancelOrder,
 };

@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { formatPrice } from "@/lib/formatters";
 import {
   Select,
   SelectContent,
@@ -41,6 +43,7 @@ function imageOf(item) {
 }
 
 export default function AdminOrders() {
+  usePageTitle("Admin Orders");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("all");
@@ -149,7 +152,7 @@ export default function AdminOrders() {
                   <TableCell className="text-muted-foreground max-w-[200px] truncate" title={o.shippingAddress}>{o.shippingAddress || "-"}</TableCell>
                   <TableCell className="whitespace-nowrap">{new Date(o.createdAt).toLocaleString()}</TableCell>
                   <TableCell>{o.items?.length || 0}</TableCell>
-                  <TableCell>₹{Number(o.totalPrice).toFixed(2)}</TableCell>
+                  <TableCell>{formatPrice(o.totalPrice)}</TableCell>
                   <TableCell>
                     <Badge variant={orderStatusBadgeVariant(o.orderStatus)} className="capitalize">
                       {o.orderStatus}
@@ -167,6 +170,7 @@ export default function AdminOrders() {
                         <SelectItem value="confirmed">Confirmed</SelectItem>
                         <SelectItem value="shipped">Shipped</SelectItem>
                         <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button type="button" size="sm" variant="outline" onClick={() => setSelectedOrder(o)}>
@@ -205,16 +209,16 @@ export default function AdminOrders() {
                     <img src={imageOf(line)} alt="" className="h-12 w-12 rounded object-cover" />
                     <div className="flex-1">
                       <p className="font-medium">{line.product?.name || "Product"}</p>
-                      <p className="text-sm text-muted-foreground">Qty {line.quantity} � ₹{Number(line.price).toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">Qty {line.quantity} x {formatPrice(line.price)}</p>
                     </div>
-                    <p className="font-semibold">₹{(Number(line.price) * Number(line.quantity)).toFixed(2)}</p>
+                    <p className="font-semibold">{formatPrice(Number(line.price) * Number(line.quantity))}</p>
                   </div>
                 ))}
               </div>
 
               <div className="flex items-center justify-between border-t pt-3 text-lg font-semibold">
                 <span>Total</span>
-                <span>₹{Number(selectedOrder.totalPrice).toFixed(2)}</span>
+                <span>{formatPrice(selectedOrder.totalPrice)}</span>
               </div>
             </div>
           )}
