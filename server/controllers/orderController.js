@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const createOrder = async (req, res, next) => {
   try {
-    const { items, shippingAddress, couponCode } = req.body;
+    const { items, shippingAddress } = req.body;
     if (!shippingAddress || !items || !Array.isArray(items) || items.length === 0) {
       res.status(400);
       throw new Error("Items and shipping address are required");
@@ -39,16 +39,7 @@ const createOrder = async (req, res, next) => {
       });
     }
     
-    // Apply coupon if provided
-    let discountAmount = 0;
-    if (couponCode) {
-      const Coupon = require("../models/Coupon");
-      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
-      if (coupon && coupon.isActive && new Date(coupon.expiryDate) >= new Date()) {
-        discountAmount = (totalPrice * coupon.discountPercentage) / 100;
-        totalPrice -= discountAmount;
-      }
-    }
+
 
     for (const line of lineItems) {
       await Product.findByIdAndUpdate(line.product, { $inc: { stock: -line.quantity } });

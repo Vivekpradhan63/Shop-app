@@ -32,35 +32,6 @@ export default function CartSheet({ open, onOpenChange }) {
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
-
-  const discountAmount = appliedCoupon 
-    ? (totalPrice * appliedCoupon.discountPercentage) / 100 
-    : 0;
-  const finalTotal = totalPrice - discountAmount;
-
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) return;
-    setValidatingCoupon(true);
-    try {
-      const { data } = await axiosInstance.post("/coupons/validate", { code: couponCode.trim() });
-      setAppliedCoupon(data);
-      toast.success("Coupon applied!");
-    } catch (e) {
-      toast.error(e.response?.data?.message || "Invalid coupon");
-      setAppliedCoupon(null);
-    } finally {
-      setValidatingCoupon(false);
-    }
-  };
-
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-  };
-
   const placeOrder = async () => {
     if (!address.trim()) {
       toast.error("Please enter a shipping address");
@@ -76,7 +47,6 @@ export default function CartSheet({ open, onOpenChange }) {
       const { data } = await axiosInstance.post("/orders", {
         shippingAddress: address.trim(),
         items: items.map((i) => ({ product: i.productId, quantity: i.quantity })),
-        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       });
       clearCart();
       setCheckoutOpen(false);
@@ -150,33 +120,9 @@ export default function CartSheet({ open, onOpenChange }) {
           </div>
           <Separator />
           <div className="space-y-3">
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Promo Code" 
-                value={couponCode} 
-                onChange={e => setCouponCode(e.target.value)} 
-                disabled={!!appliedCoupon || validatingCoupon}
-                className="h-9"
-              />
-              {appliedCoupon ? (
-                <Button variant="ghost" size="sm" onClick={removeCoupon} className="text-destructive h-9">Remove</Button>
-              ) : (
-                <Button variant="secondary" size="sm" onClick={applyCoupon} disabled={!couponCode || validatingCoupon} className="h-9">
-                  {validatingCoupon ? "Wait..." : "Apply"}
-                </Button>
-              )}
-            </div>
-            
-            {appliedCoupon && (
-              <div className="flex justify-between text-sm text-green-600 font-medium">
-                <span>Discount ({appliedCoupon.discountPercentage}%)</span>
-                <span>-{formatPrice(discountAmount)}</span>
-              </div>
-            )}
-            
             <div className="flex justify-between text-lg font-semibold">
               <span>Total</span>
-              <span>{formatPrice(finalTotal)}</span>
+              <span>{formatPrice(totalPrice)}</span>
             </div>
             <Button className="w-full" asChild variant="secondary">
               <Link to="/cart" onClick={() => onOpenChange(false)}>

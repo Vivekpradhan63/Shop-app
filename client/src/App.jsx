@@ -19,7 +19,6 @@ import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
 import AdminProducts from "@/pages/admin/AdminProducts.jsx";
 import AdminOrders from "@/pages/admin/AdminOrders.jsx";
 import AdminUsers from "@/pages/admin/AdminUsers.jsx";
-import AdminCoupons from "@/pages/admin/AdminCoupons.jsx";
 import AdminLogin from "@/pages/admin/AdminLogin.jsx";
 
 export default function App() {
@@ -55,7 +54,6 @@ export default function App() {
           <Route path="products" element={<Navigate to="/admin/groceries" replace />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="users" element={<AdminUsers />} />
-          <Route path="coupons" element={<AdminCoupons />} />
         </Route>
       </Route>
 

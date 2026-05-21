@@ -10,7 +10,6 @@ const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const userRoutes = require("./routes/userRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
-const couponRoutes = require("./routes/couponRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
@@ -58,7 +57,6 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/coupons", couponRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
 app.use(notFound);

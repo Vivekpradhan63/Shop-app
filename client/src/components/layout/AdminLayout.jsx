@@ -9,7 +9,6 @@ const navItems = [
   { to: "/admin/groceries", label: "Groceries", icon: ShoppingBasket, value: "groceries" },
   { to: "/admin/orders", label: "Orders", icon: PackageCheck, value: "orders" },
   { to: "/admin/users", label: "Users", icon: Users, value: "users" },
-  { to: "/admin/coupons", label: "Coupons", icon: Ticket, value: "coupons" },
 ];
 
 export default function AdminLayout() {

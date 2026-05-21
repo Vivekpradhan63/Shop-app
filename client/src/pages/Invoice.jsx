@@ -123,7 +123,6 @@ export default function Invoice() {
               <span>Subtotal</span>
               <span className="tabular-nums">{formatPrice(order.totalPrice)}</span>
             </div>
-            {/* Note: Coupon applied discounts are already reflected in the order total for now */}
             <div className="flex justify-between text-gray-600 pb-3 border-b">
               <span>Shipping</span>
               <span>Free</span>
