@@ -22,10 +22,10 @@ class OrderService {
       }
       const product = await Product.findById(productId);
       if (!product) {
-        throw new Error(\`Product not found: \${productId}\`);
+        throw new Error(`Product not found: ${productId}`);
       }
       if (product.stock < quantity) {
-        throw new Error(\`Insufficient stock for \${product.name}\`);
+        throw new Error(`Insufficient stock for ${product.name}`);
       }
       const price = product.price;
       totalPrice += price * quantity;
