@@ -15,9 +15,11 @@ import { Package, AlertTriangle, TrendingUp } from "lucide-react";
 
 export default function AdminDashboard() {
   usePageTitle("Admin Dashboard");
-  const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0, pendingOrders: 0, lowStockProducts: 0 });
+  const [topProducts, setTopProducts] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [lowStockProductsList, setLowStockProductsList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,15 +27,32 @@ export default function AdminDashboard() {
     (async () => {
       setLoading(true);
       try {
-        const [o, p, u] = await Promise.all([
-          axiosInstance.get("/orders"),
-          axiosInstance.get("/products"),
-          axiosInstance.get("/users"),
+        const [summary, top, rev, orders, products] = await Promise.all([
+          axiosInstance.get("/analytics/summary"),
+          axiosInstance.get("/analytics/top-products"),
+          axiosInstance.get("/analytics/revenue"),
+          axiosInstance.get("/orders?limit=5"),
+          axiosInstance.get("/products?limit=5&sort=stock_asc") // For low stock, we need an endpoint or just fetch 5. Let's fetch products and filter for now or we could add a new endpoint.
         ]);
         if (!cancelled) {
-          setOrders(o.data);
-          setProducts(p.data);
-          setUsers(u.data);
+          setStats(summary.data);
+          setTopProducts(top.data);
+          
+          // Map backend revenue dates to match recharts needs
+          const mappedRev = rev.data.map(d => {
+            const dateObj = new Date(d.date);
+            return {
+              date: dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+              revenue: d.revenue,
+              fullDate: d.date
+            };
+          });
+          setRevenueData(mappedRev);
+          setRecentOrders(orders.data.orders || []);
+          
+          // We can use the client side filter for low stock products using the existing API if needed, but since we want scalable, we should fetch products and filter them. For now, fetch all or a large number.
+          const allProducts = await axiosInstance.get("/products?limit=100");
+          setLowStockProductsList(allProducts.data.products?.filter(p => p.stock > 0 && p.stock <= 5).sort((a, b) => a.stock - b.stock) || []);
         }
       } catch (e) {
         toast.error(e.response?.data?.message || "Could not load admin data");
@@ -46,73 +65,22 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  const stats = useMemo(() => {
-    const revenue = orders.reduce((s, x) => s + Number(x.totalPrice || 0), 0);
-    return {
-      orderCount: orders.length,
-      productCount: products.length,
-      userCount: users.length,
-      revenue,
-    };
-  }, [orders, products, users]);
-
-  const recentOrders = useMemo(
-    () => [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5),
-    [orders]
-  );
-
-  const lowStockProducts = useMemo(
-    () => products.filter(p => p.stock > 0 && p.stock <= 5).sort((a, b) => a.stock - b.stock),
-    [products]
-  );
-
-  const topProducts = useMemo(() => {
-    const counts = {};
-    orders.forEach(o => {
-      o.items?.forEach(i => {
-        if (!i.product) return;
-        const pId = typeof i.product === 'object' ? i.product._id : i.product;
-        const pName = typeof i.product === 'object' ? i.product.name : "Product";
-        if (!counts[pId]) counts[pId] = { name: pName, sold: 0, revenue: 0 };
-        counts[pId].sold += i.quantity;
-        counts[pId].revenue += i.quantity * Number(i.price);
-      });
-    });
-    return Object.values(counts)
-      .sort((a, b) => b.sold - a.sold)
-      .slice(0, 5);
-  }, [orders]);
-
-  const revenueData = useMemo(() => {
-    const days = 7;
-    const data = [];
-    const now = new Date();
-    
-    // Initialize last 7 days
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      data.push({
-        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        revenue: 0,
-        fullDate: d.toISOString().split("T")[0]
-      });
-    }
-
-    orders.forEach(o => {
-      const dateStr = new Date(o.createdAt).toISOString().split("T")[0];
-      const dayData = data.find(d => d.fullDate === dateStr);
-      if (dayData) {
-        dayData.revenue += Number(o.totalPrice || 0);
-      }
-    });
-
-    return data;
-  }, [orders]);
+  const exportToCSV = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Date,Revenue\\n" 
+      + revenueData.map(e => `${e.fullDate},${e.revenue}`).join("\\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "revenue_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
-      <div className="flex justify-center py-24">
+      <div className="flex justify-center py-24" data-testid="loading-spinner">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -120,9 +88,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of groceries, orders, users, and revenue.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Overview of groceries, orders, users, and revenue.</p>
+        </div>
+        <button onClick={exportToCSV} className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+          Export Revenue CSV
+        </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -132,7 +105,7 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPrice(stats.revenue)}</div>
+            <div className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -141,7 +114,7 @@ export default function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.orderCount}</div>
+            <div className="text-2xl font-bold">{stats.totalOrders}</div>
           </CardContent>
         </Card>
         <Card>
@@ -149,7 +122,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.productCount}</div>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
           </CardContent>
         </Card>
         <Card>
@@ -157,7 +130,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.userCount}</div>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
           </CardContent>
         </Card>
       </div>
@@ -167,7 +140,7 @@ export default function AdminDashboard() {
         {/* Revenue Chart */}
         <Card className="col-span-1 lg:col-span-4">
           <CardHeader>
-            <CardTitle>Revenue Overview (Last 7 Days)</CardTitle>
+            <CardTitle>Revenue Overview (Last 30 Days)</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[300px] w-full">
@@ -208,7 +181,7 @@ export default function AdminDashboard() {
                   <div key={i} className="flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none truncate max-w-[200px]">{p.name}</p>
-                      <p className="text-sm text-muted-foreground">{p.sold} units sold</p>
+                      <p className="text-sm text-muted-foreground">{p.soldCount} units sold</p>
                     </div>
                     <div className="font-medium">{formatPrice(p.revenue)}</div>
                   </div>
@@ -273,10 +246,10 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {lowStockProducts.length === 0 ? (
+              {lowStockProductsList.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">All products are sufficiently stocked.</p>
               ) : (
-                lowStockProducts.map((p) => (
+                lowStockProductsList.map((p) => (
                   <div key={p._id} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none">{p.name}</p>

@@ -1,96 +1,21 @@
-const Order = require("../models/Order");
-const Product = require("../models/Product");
-const mongoose = require("mongoose");
+const OrderService = require("../services/orderService");
 
 const createOrder = async (req, res, next) => {
   try {
-    const { items, shippingAddress } = req.body;
-    if (!shippingAddress || !items || !Array.isArray(items) || items.length === 0) {
-      res.status(400);
-      throw new Error("Items and shipping address are required");
-    }
-    const lineItems = [];
-    let totalPrice = 0;
-    for (const line of items) {
-      const { product: productId, quantity } = line;
-      if (!productId || !quantity || quantity < 1) {
-        res.status(400);
-        throw new Error("Each item needs product id and valid quantity");
-      }
-      if (!mongoose.Types.ObjectId.isValid(productId)) {
-        res.status(400);
-        throw new Error("Invalid product id in cart");
-      }
-      const product = await Product.findById(productId);
-      if (!product) {
-        res.status(400);
-        throw new Error(`Product not found: ${productId}`);
-      }
-      if (product.stock < quantity) {
-        res.status(400);
-        throw new Error(`Insufficient stock for ${product.name}`);
-      }
-      const price = product.price;
-      totalPrice += price * quantity;
-      lineItems.push({
-        product: product._id,
-        quantity: Number(quantity),
-        price,
-      });
-    }
-    
-
-
-    for (const line of lineItems) {
-      await Product.findByIdAndUpdate(line.product, { $inc: { stock: -line.quantity } });
-    }
-    const order = await Order.create({
-      user: req.user._id,
-      phone: req.user.phone || "",
-      items: lineItems,
-      shippingAddress: shippingAddress.trim(),
-      totalPrice,
-      orderStatus: "pending",
-      paymentStatus: "pending",
-    });
-    const populated = await Order.findById(order._id)
-      .populate("user", "name email phone")
-      .populate("items.product", "name images price");
-    res.status(201).json(populated);
+    const result = await OrderService.createOrder(req.user, req.body);
+    res.status(201).json(result);
   } catch (e) {
+    if (e.message.includes("required") || e.message.includes("Invalid") || e.message.includes("Insufficient")) {
+      res.status(400);
+    }
     next(e);
   }
 };
 
 const getMyOrders = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    const [orders, total] = await Promise.all([
-      Order.find({ user: req.user._id })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNumber)
-        .populate("user", "name email phone")
-        .populate("items.product", "name images price"),
-      Order.countDocuments({ user: req.user._id })
-    ]);
-
-    const normalized = orders.map((o) => {
-      const obj = o.toObject();
-      if (!obj.phone) obj.phone = obj.user?.phone || "";
-      return obj;
-    });
-
-    res.json({
-      orders: normalized,
-      totalPages: Math.ceil(total / limitNumber),
-      currentPage: pageNumber,
-      total
-    });
+    const result = await OrderService.getMyOrders(req.user, req.query);
+    res.json(result);
   } catch (e) {
     next(e);
   }
@@ -98,60 +23,20 @@ const getMyOrders = async (req, res, next) => {
 
 const getOrderById = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      res.status(400);
-      throw new Error("Invalid order id");
-    }
-    const order = await Order.findById(req.params.id)
-      .populate("user", "name email phone")
-      .populate("items.product", "name images price");
-    if (!order) {
-      res.status(404);
-      throw new Error("Order not found");
-    }
-    const ownerId = order.user?._id?.toString() || order.user?.toString();
-    if (ownerId !== req.user._id.toString() && req.user.role !== "admin") {
-      res.status(403);
-      throw new Error("Not authorized to view this order");
-    }
-    // Back-compat: fill phone from user if not stored on order
-    const obj = order.toObject();
-    if (!obj.phone) obj.phone = obj.user?.phone || "";
-    res.json(obj);
+    const result = await OrderService.getOrderById(req.params.id, req.user);
+    res.json(result);
   } catch (e) {
+    if (e.message.includes("Invalid")) res.status(400);
+    else if (e.message.includes("not found")) res.status(404);
+    else if (e.message.includes("authorized")) res.status(403);
     next(e);
   }
 };
 
 const getAllOrders = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    const [orders, total] = await Promise.all([
-      Order.find({})
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNumber)
-        .populate("user", "name email phone")
-        .populate("items.product", "name images price"),
-      Order.countDocuments({})
-    ]);
-
-    const normalized = orders.map((o) => {
-      const obj = o.toObject();
-      if (!obj.phone) obj.phone = obj.user?.phone || "";
-      return obj;
-    });
-
-    res.json({
-      orders: normalized,
-      totalPages: Math.ceil(total / limitNumber),
-      currentPage: pageNumber,
-      total
-    });
+    const result = await OrderService.getAllOrders(req.query);
+    res.json(result);
   } catch (e) {
     next(e);
   }
@@ -159,67 +44,30 @@ const getAllOrders = async (req, res, next) => {
 
 const updateOrderStatus = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      res.status(400);
-      throw new Error("Invalid order id");
-    }
-    const { orderStatus } = req.body;
-    const allowed = ["pending", "confirmed", "shipped", "delivered"];
-    if (!orderStatus || !allowed.includes(orderStatus)) {
-      res.status(400);
-      throw new Error("Invalid order status");
-    }
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      res.status(404);
-      throw new Error("Order not found");
-    }
-    order.orderStatus = orderStatus;
-    await order.save();
-    const populated = await Order.findById(order._id)
-      .populate("user", "name email phone")
-      .populate("items.product", "name images price");
-    res.json(populated);
+    const result = await OrderService.updateOrderStatus(req.params.id, req.body, req.user._id);
+    res.json(result);
   } catch (e) {
+    if (e.message.includes("Invalid order id") || e.message.includes("Invalid order status")) {
+      res.status(400);
+    } else if (e.message.includes("not found")) {
+      res.status(404);
+    }
     next(e);
   }
 };
 
 const cancelOrder = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      res.status(400);
-      throw new Error("Invalid order id");
-    }
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      res.status(404);
-      throw new Error("Order not found");
-    }
-    const ownerId = order.user?._id?.toString() || order.user?.toString();
-    if (ownerId !== req.user._id.toString() && req.user.role !== "admin") {
-      res.status(403);
-      throw new Error("Not authorized to cancel this order");
-    }
-    if (order.orderStatus !== "pending") {
-      res.status(400);
-      throw new Error("Only pending orders can be cancelled");
-    }
-
-    order.orderStatus = "cancelled";
-    order.cancelledAt = Date.now();
-    await order.save();
-
-    // Restore stock
-    for (const line of order.items) {
-      await Product.findByIdAndUpdate(line.product, { $inc: { stock: line.quantity } });
-    }
-
-    const populated = await Order.findById(order._id)
-      .populate("user", "name email phone")
-      .populate("items.product", "name images price");
-    res.json(populated);
+    const result = await OrderService.cancelOrder(req.params.id, req.user);
+    res.json(result);
   } catch (e) {
+    if (e.message.includes("Invalid order id") || e.message.includes("cancelled")) {
+      res.status(400);
+    } else if (e.message.includes("not found")) {
+      res.status(404);
+    } else if (e.message.includes("authorized")) {
+      res.status(403);
+    }
     next(e);
   }
 };

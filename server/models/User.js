@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema(
     address: { type: String, default: "" },
     isBlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
+    lastLoginIP: { type: String }
   },
   { timestamps: false }
 );
