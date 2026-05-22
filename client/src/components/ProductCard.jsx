@@ -50,15 +50,7 @@ export default function ProductCard({ product }) {
               {product.category}
             </Badge>
           )}
-          {isOutOfStock ? (
-            <Badge variant="destructive" className="w-fit shadow-sm">
-              Out of Stock
-            </Badge>
-          ) : isLowStock ? (
-            <Badge variant="warning" className="w-fit shadow-sm bg-amber-500 text-white">
-              Low Stock
-            </Badge>
-          ) : null}
+
         </div>
       </Link>
       <CardContent className="p-4 flex-1 flex flex-col gap-2">
@@ -68,10 +60,13 @@ export default function ProductCard({ product }) {
         <StarRating value={product.ratings || 0} />
         <p className="text-lg font-bold">{formatPrice(product.price)}</p>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 flex flex-col gap-2 items-center">
         <Button className="w-full" type="button" onClick={onAdd} disabled={isOutOfStock}>
           {isOutOfStock ? "Out of Stock" : "Add to Cart"}
         </Button>
+        <p className={`text-xs font-medium ${isOutOfStock ? "text-destructive" : "text-green-600"}`}>
+          {isOutOfStock ? "Currently out of stock" : "✓ In Stock"}
+        </p>
       </CardFooter>
     </Card>
   );

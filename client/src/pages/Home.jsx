@@ -111,19 +111,7 @@ export default function Home() {
         )}
       </div>
       
-      {!loading && recentlyViewed.length > 0 && (
-        <div className="space-y-6 pt-8 border-t">
-          <div className="flex items-center gap-2">
-            <Clock className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold tracking-tight">Recently Viewed</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {recentlyViewed.map((p) => (
-              <ProductCard key={p._id} product={p} />
-            ))}
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
