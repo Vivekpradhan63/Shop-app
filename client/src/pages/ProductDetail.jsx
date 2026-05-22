@@ -265,10 +265,7 @@ export default function ProductDetail() {
                     <th className="px-4 py-3 font-medium text-muted-foreground">Added On</th>
                     <td className="px-4 py-3">{formatDate(product.createdAt)}</td>
                   </tr>
-                  <tr>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">Product ID</th>
-                    <td className="px-4 py-3 font-mono text-xs">{product._id}</td>
-                  </tr>
+
                 </tbody>
               </table>
             </div>
