@@ -18,8 +18,8 @@ function productImage(images) {
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
 
-  const isOutOfStock = product.stock <= 0 || !product.available;
-  const isLowStock = product.stock > 0 && product.stock <= 5;
+  const isOutOfStock = (product.stock != null && product.stock <= 0) || product.available === false;
+  const isLowStock = product.stock != null && product.stock > 0 && product.stock <= 5;
 
   const onAdd = (e) => {
     e.preventDefault();

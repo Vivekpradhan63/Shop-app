@@ -66,7 +66,8 @@ export default function ProductDetail() {
           price: data.price,
           images: data.images,
           category: data.category,
-          available: data.available
+          available: data.available,
+          stock: data.stock
         });
         localStorage.setItem("recentlyViewed", JSON.stringify(filtered.slice(0, 10)));
       } catch (e) {
