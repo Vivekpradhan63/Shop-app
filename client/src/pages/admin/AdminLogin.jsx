@@ -12,7 +12,7 @@ export default function AdminLogin() {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/admin";
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -40,8 +40,7 @@ export default function AdminLogin() {
 
   const validate = () => {
     const e = {};
-    if (!email.trim()) e.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(email.trim())) e.email = "Enter a valid email address";
+    if (!identifier.trim()) e.identifier = "Email or Phone is required";
     if (!password) e.password = "Password is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -52,7 +51,7 @@ export default function AdminLogin() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const data = await login(email.trim(), password);
+      const data = await login(identifier.trim(), password);
       if (data.user?.role !== "admin") {
         setShake(true);
         setTimeout(() => setShake(false), 600);
@@ -124,22 +123,22 @@ export default function AdminLogin() {
 
             <form onSubmit={onSubmit} className="admin-form" noValidate>
 
-              {/* Email */}
+              {/* Identifier */}
               <div className="admin-field">
-                <label htmlFor="admin-email" className="admin-label">Email Address</label>
+                <label htmlFor="admin-identifier" className="admin-label">Email or Phone Number</label>
                 <div className="admin-input-wrap">
                   <Mail size={16} className="admin-input-icon" />
                   <input
-                    id="admin-email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="admin@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`admin-input${errors.email ? " admin-input-error" : ""}`}
+                    id="admin-identifier"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="admin@example.com or phone"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className={`admin-input${errors.identifier ? " admin-input-error" : ""}`}
                   />
                 </div>
-                {errors.email && <p className="admin-error-msg">{errors.email}</p>}
+                {errors.identifier && <p className="admin-error-msg">{errors.identifier}</p>}
               </div>
 
               {/* Password */}

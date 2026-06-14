@@ -15,7 +15,7 @@ export default function Login() {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -27,7 +27,7 @@ export default function Login() {
 
   const validate = () => {
     const e = {};
-    if (!phone.trim()) e.phone = "Phone number is required";
+    if (!identifier.trim()) e.identifier = "Email or Phone is required";
     if (!password) e.password = "Password is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -38,7 +38,7 @@ export default function Login() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await login(phone.trim(), password);
+      await login(identifier.trim(), password);
       toast.success("Welcome back!");
       navigate(from, { replace: true });
     } catch (err) {
@@ -87,25 +87,25 @@ export default function Login() {
 
           <form onSubmit={onSubmit} className="space-y-5">
 
-            {/* Phone field */}
+            {/* Identifier field */}
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium text-blue-100">
-                Phone Number
+              <Label htmlFor="identifier" className="text-sm font-medium text-blue-100">
+                Email or Phone Number
               </Label>
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-300/50" />
                 <Input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="Enter your phone number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Enter email or phone number"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="border-white/10 bg-white/10 pl-10 text-white placeholder:text-white/30 focus:border-blue-400 focus:ring-blue-400/30 h-12"
                 />
               </div>
-              {errors.phone && (
-                <p className="text-xs text-red-400">{errors.phone}</p>
+              {errors.identifier && (
+                <p className="text-xs text-red-400">{errors.identifier}</p>
               )}
             </div>
 
