@@ -20,10 +20,11 @@ export default function Home() {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await axiosInstance.get("/products");
+        const { data } = await axiosInstance.get("/products?limit=20");
         if (!cancelled) {
-          setProducts(data);
-          const cats = [...new Set(data.map((p) => p.category).filter(Boolean))];
+          const productsArray = data.products || [];
+          setProducts(productsArray);
+          const cats = [...new Set(productsArray.map((p) => p.category).filter(Boolean))];
           setCategories(cats.sort());
         }
       } catch {

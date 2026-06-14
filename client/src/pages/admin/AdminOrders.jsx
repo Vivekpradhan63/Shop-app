@@ -54,8 +54,8 @@ export default function AdminOrders() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await axiosInstance.get("/orders");
-      setOrders(data);
+      const { data } = await axiosInstance.get("/orders?limit=1000");
+      setOrders(data.orders || []);
     } catch (e) {
       toast.error(e.response?.data?.message || "Could not load orders");
     } finally {

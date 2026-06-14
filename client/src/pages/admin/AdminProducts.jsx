@@ -72,8 +72,8 @@ export default function AdminProducts() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await axiosInstance.get("/products");
-      setProducts(data);
+      const { data } = await axiosInstance.get("/products?limit=1000");
+      setProducts(data.products || []);
     } catch (e) {
       toast.error(e.response?.data?.message || "Could not load groceries");
     } finally {
